@@ -1,3 +1,5 @@
+import fight from "../commands/fight"
+
 export function startFight(
   fighters: [Fighter, Fighter],
   maxTicks = Infinity
@@ -24,8 +26,15 @@ export function startFight(
         actions.push(fighter.getAction(ctx))
       }
 
-      if (fighter.stats.energy.factor < 1) {
+      if (
+        !fighter.ableToUseEnergy &&
+        fighter.stats.energy.value < fighter.stats.energy.max
+      ) {
         fighter.stats.energy.value++
+
+        if (fighter.stats.energy.value >= fighter.stats.energy.initial) {
+          fighter.ableToUseEnergy = true
+        }
       }
     }
 
@@ -42,6 +51,7 @@ export function startFight(
 
 export class Fighter {
   public lastTick = 0
+  public ableToUseEnergy = true
 
   constructor(
     public name: string,
@@ -66,28 +76,20 @@ export class Fighter {
 export class Stat {
   public value: number
 
-  constructor(
-    public readonly initialValue: number,
-    public readonly finalValue = initialValue
-  ) {
-    this.value = initialValue
+  constructor(public readonly initial: number, public readonly max = initial) {
+    this.value = initial
   }
 
   get factor(): number {
-    return (
-      this.value /
-      (this.initialValue < this.finalValue
-        ? this.finalValue
-        : this.initialValue)
-    )
+    return this.value / this.max
   }
 
   get percents(): number {
-    return this.factor * 100
+    return Math.floor(this.factor * 100)
   }
 
   reset() {
-    this.value = this.initialValue
+    this.value = this.initial
   }
 }
 
@@ -112,14 +114,14 @@ export interface FightResult {
 export class Attack extends Action {
   priority = 1
 
-  constructor(calledBy: Fighter) {
-    super(calledBy)
+  constructor(owner: Fighter) {
+    super(owner)
   }
 
   run(ctx: FightContext): boolean {
-    if (this.owner.stats.energy.factor < 1) {
+    if (!this.owner.ableToUseEnergy) {
       console.log(
-        `${this.owner.name} doesn't have enough energy to attack. (`,
+        `${this.owner.name} doesn't have enough energy to attack. (energy:`,
         this.owner.stats.energy.percents,
         "%)"
       )
@@ -128,10 +130,12 @@ export class Attack extends Action {
     }
 
     const enemy = ctx.enemyOf(this.owner)
-    const usedEnergy = Math.floor(Math.random() * this.owner.stats.energy.value)
+    const usedEnergy = Math.ceil(Math.random() * this.owner.stats.energy.value)
     const damages = this.owner.stats.strength.value * usedEnergy
 
     this.owner.stats.energy.value -= usedEnergy
+
+    if (this.owner.stats.energy.value <= 0) this.owner.ableToUseEnergy = false
 
     enemy.stats.hp.value -= damages
 
