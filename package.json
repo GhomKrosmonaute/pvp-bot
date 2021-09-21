@@ -1,5 +1,5 @@
 {
-  "name": "bot.ts",
+  "name": "pvp",
   "version": "v3.0.0-ayfri",
   "author": "ghom",
   "description": "Discord bot in TypeScript",
@@ -39,7 +39,7 @@
     "knex": "^0.95.11",
     "prettier": "^2.3.2",
     "regex-parser": "^2.2.11",
-    "sqlite3": "^5.0.2",
+    "sqlite3": "latest",
     "tims": "^2.0.5",
     "yargs-parser": "^20.2.9"
   },
