@@ -15,14 +15,14 @@ export default new app.Command({
               hp: new app.Stat(1000),
               slowness: new app.Stat(5),
               energy: new app.Stat(50),
-              luck: new app.Stat(3),
+              luck: new app.Stat(30, 100),
               strength: new app.Stat(6),
             }),
             new app.Fighter("Bob", {
               hp: new app.Stat(1000),
               slowness: new app.Stat(4),
               energy: new app.Stat(50),
-              luck: new app.Stat(4),
+              luck: new app.Stat(40, 100),
               strength: new app.Stat(5),
             }),
           ])

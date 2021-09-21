@@ -1,4 +1,4 @@
-import fight from "../commands/fight"
+import chalk from "chalk"
 
 export function startFight(
   fighters: [Fighter, Fighter],
@@ -93,6 +93,8 @@ export class Stat {
   }
 }
 
+export class Luck {}
+
 export abstract class Action {
   abstract priority: number
 
@@ -130,8 +132,12 @@ export class Attack extends Action {
     }
 
     const enemy = ctx.enemyOf(this.owner)
+    const critical = Math.random() < this.owner.stats.luck.factor
     const usedEnergy = Math.ceil(Math.random() * this.owner.stats.energy.value)
-    const damages = this.owner.stats.strength.value * usedEnergy
+
+    let damages = this.owner.stats.strength.value * usedEnergy
+
+    if (critical) damages *= 2
 
     this.owner.stats.energy.value -= usedEnergy
 
@@ -140,13 +146,15 @@ export class Attack extends Action {
     enemy.stats.hp.value -= damages
 
     console.log(
-      `${this.owner.name} attack ${enemy.name} by`,
-      damages,
-      "at",
-      ctx.ticker,
-      "ticks. (life: ",
-      enemy.stats.hp.percents,
-      "%)"
+      chalk[critical ? "red" : "blue"](
+        `${this.owner.name} attack ${enemy.name} by`,
+        damages,
+        "at",
+        ctx.ticker,
+        "ticks. (life: ",
+        enemy.stats.hp.percents,
+        "%)"
+      )
     )
 
     return true
