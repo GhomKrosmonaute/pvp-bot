@@ -1,14 +1,27 @@
-import chalk from "chalk"
-
 export function startFight(
   fighters: [Fighter, Fighter],
   maxTicks = Infinity
 ): FightResult {
   const ctx: FightContext = {
+    logs: [],
     ticker: -1,
     fighters,
-    enemyOf(fighter: Fighter): Fighter {
+    enemyOf(fighter: Fighter) {
       return this.fighters.find((f) => f !== fighter) as Fighter
+    },
+    freeze() {
+      return {
+        ticker: this.ticker,
+        fighters: [this.fighters[0].freeze(), this.fighters[1].freeze()],
+      }
+    },
+    log(fighter: FrozenFighter, message: string) {
+      this.logs.push({
+        fighter,
+        message,
+        time: Date.now(),
+        ctx: this.freeze(),
+      })
     },
   }
 
@@ -46,7 +59,7 @@ export function startFight(
 
   let winner = fighters.find((fighter) => fighter.stats.hp.value > 0) ?? null
 
-  return { winner }
+  return { winner, logs: ctx.logs }
 }
 
 export class Fighter {
@@ -69,7 +82,31 @@ export class Fighter {
   }
 
   getAction(ctx: FightContext): Action {
+    // get action related to fight context
     return new Attack(this)
+  }
+
+  freeze(): FrozenFighter {
+    return {
+      stats: {
+        hp: this.stats.hp.freeze(),
+        luck: this.stats.luck.freeze(),
+        energy: this.stats.energy.freeze(),
+        strength: this.stats.strength.freeze(),
+        slowness: this.stats.slowness.freeze(),
+      },
+      ableToUseEnergy: this.ableToUseEnergy,
+      lastTick: this.lastTick,
+      name: this.name,
+    }
+  }
+
+  toString(): string {
+    return `**${this.name}**`
+  }
+
+  toJSON(): object {
+    return this.freeze()
   }
 }
 
@@ -91,9 +128,17 @@ export class Stat {
   reset() {
     this.value = this.initial
   }
+
+  freeze(): FrozenStat {
+    return {
+      initial: this.initial,
+      value: this.value,
+      max: this.max,
+    }
+  }
 }
 
-export class Luck {}
+export class Luck extends Stat {}
 
 export abstract class Action {
   abstract priority: number
@@ -103,14 +148,43 @@ export abstract class Action {
   abstract run(ctx: FightContext): boolean // success?
 }
 
+export interface FrozenFighter {
+  name: string
+  stats: Record<keyof Fighter["stats"], FrozenStat>
+  lastTick: number
+  ableToUseEnergy: boolean
+}
+
 export interface FightContext {
+  logs: FightLog[]
   ticker: number
   fighters: [Fighter, Fighter]
   enemyOf(fighter: Fighter): Fighter
+  freeze(): FrozenFightContext
+  log(fighter: FrozenFighter, message: string): void
+}
+
+export interface FrozenStat {
+  initial: number
+  max: number
+  value: number
+}
+
+export interface FrozenFightContext {
+  ticker: number
+  fighters: [FrozenFighter, FrozenFighter]
 }
 
 export interface FightResult {
   winner: Fighter | null
+  logs: FightLog[]
+}
+
+export interface FightLog {
+  message: string
+  fighter: FrozenFighter
+  time: number
+  ctx: FrozenFightContext
 }
 
 export class Attack extends Action {
@@ -122,10 +196,9 @@ export class Attack extends Action {
 
   run(ctx: FightContext): boolean {
     if (!this.owner.ableToUseEnergy) {
-      console.log(
-        `${this.owner.name} doesn't have enough energy to attack. (energy:`,
-        this.owner.stats.energy.percents,
-        "%)"
+      ctx.log(
+        this.owner,
+        `${this.owner} doesn't have enough energy to attack. (\`${this.owner.stats.energy.percents}%\` of full energy)`
       )
 
       return false
@@ -137,24 +210,28 @@ export class Attack extends Action {
 
     let damages = this.owner.stats.strength.value * usedEnergy
 
-    if (critical) damages *= 2
+    if (critical) {
+      ctx.log(
+        this.owner,
+        `${this.owner}'s next damages are doubled! (critical hit)`
+      )
+
+      damages *= 2
+    }
 
     this.owner.stats.energy.value -= usedEnergy
 
-    if (this.owner.stats.energy.value <= 0) this.owner.ableToUseEnergy = false
+    if (this.owner.stats.energy.value <= 0) {
+      ctx.log(this.owner, `${this.owner} has exhausted his energy reserve.`)
+
+      this.owner.ableToUseEnergy = false
+    }
 
     enemy.stats.hp.value -= damages
 
-    console.log(
-      chalk[critical ? "red" : "blue"](
-        `${this.owner.name} attack ${enemy.name} by`,
-        damages,
-        "at",
-        ctx.ticker,
-        "ticks. (life: ",
-        enemy.stats.hp.percents,
-        "%)"
-      )
+    ctx.log(
+      this.owner,
+      `${this.owner} deals \`${damages}\` damage to ${enemy}! (\`${enemy.stats.hp.value}%\` life points left)`
     )
 
     return true

@@ -5,29 +5,27 @@ export default new app.Command({
   description: "The fight command",
   channelType: "all",
   async run(message) {
+    const fightResult = app.startFight([
+      new app.Fighter("Billy", {
+        hp: new app.Stat(100),
+        slowness: new app.Stat(3),
+        energy: new app.Stat(20),
+        luck: new app.Stat(10, 100),
+        strength: new app.Stat(3),
+      }),
+      new app.Fighter("Bob", {
+        hp: new app.Stat(100),
+        slowness: new app.Stat(4),
+        energy: new app.Stat(20),
+        luck: new app.Stat(15, 100),
+        strength: new app.Stat(4),
+      }),
+    ])
+
     return message.send(
-      app.code.stringify({
-        lang: "json",
-        format: true,
-        content: JSON.stringify(
-          app.startFight([
-            new app.Fighter("Billy", {
-              hp: new app.Stat(1000),
-              slowness: new app.Stat(5),
-              energy: new app.Stat(50),
-              luck: new app.Stat(30, 100),
-              strength: new app.Stat(6),
-            }),
-            new app.Fighter("Bob", {
-              hp: new app.Stat(1000),
-              slowness: new app.Stat(4),
-              energy: new app.Stat(50),
-              luck: new app.Stat(40, 100),
-              strength: new app.Stat(5),
-            }),
-          ])
-        ),
-      })
+      `Winner: **${fightResult.winner}**\n${fightResult.logs
+        .map((log) => log.message)
+        .join("\n")}`
     )
   },
 })
