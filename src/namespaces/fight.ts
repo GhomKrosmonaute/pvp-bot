@@ -1,3 +1,5 @@
+import * as app from "../app.js"
+
 export function startFight(
   fighters: [Fighter, Fighter],
   maxTicks = Infinity
@@ -15,12 +17,12 @@ export function startFight(
         fighters: [this.fighters[0].freeze(), this.fighters[1].freeze()],
       }
     },
-    log(fighter: FrozenFighter, message: string) {
+    log(fighter, message) {
       this.logs.push({
-        fighter,
         message,
         time: Date.now(),
         ctx: this.freeze(),
+        fighter: fighter.freeze(),
       })
     },
   }
@@ -59,7 +61,7 @@ export function startFight(
 
   let winner = fighters.find((fighter) => fighter.stats.hp.value > 0) ?? null
 
-  return { winner, logs: ctx.logs }
+  return { winner: winner?.user ?? null, logs: ctx.logs }
 }
 
 export class Fighter {
@@ -67,7 +69,7 @@ export class Fighter {
   public ableToUseEnergy = true
 
   constructor(
-    public name: string,
+    public user: app.User,
     public stats: {
       hp: Stat
       slowness: Stat
@@ -97,12 +99,12 @@ export class Fighter {
       },
       ableToUseEnergy: this.ableToUseEnergy,
       lastTick: this.lastTick,
-      name: this.name,
+      userId: this.user.id,
     }
   }
 
   toString(): string {
-    return `**${this.name}**`
+    return `**${this.user.username}**`
   }
 
   toJSON(): object {
@@ -149,7 +151,7 @@ export abstract class Action {
 }
 
 export interface FrozenFighter {
-  name: string
+  userId: string
   stats: Record<keyof Fighter["stats"], FrozenStat>
   lastTick: number
   ableToUseEnergy: boolean
@@ -161,7 +163,7 @@ export interface FightContext {
   fighters: [Fighter, Fighter]
   enemyOf(fighter: Fighter): Fighter
   freeze(): FrozenFightContext
-  log(fighter: FrozenFighter, message: string): void
+  log(fighter: Fighter, message: string): void
 }
 
 export interface FrozenStat {
@@ -176,7 +178,7 @@ export interface FrozenFightContext {
 }
 
 export interface FightResult {
-  winner: Fighter | null
+  winner: app.User | null
   logs: FightLog[]
 }
 
@@ -221,18 +223,18 @@ export class Attack extends Action {
 
     this.owner.stats.energy.value -= usedEnergy
 
-    if (this.owner.stats.energy.value <= 0) {
-      ctx.log(this.owner, `${this.owner} has exhausted his energy reserve.`)
-
-      this.owner.ableToUseEnergy = false
-    }
-
     enemy.stats.hp.value -= damages
 
     ctx.log(
       this.owner,
       `${this.owner} deals \`${damages}\` damage to ${enemy}! (\`${enemy.stats.hp.value}%\` life points left)`
     )
+
+    if (enemy.stats.hp.value > 0 && this.owner.stats.energy.value <= 0) {
+      ctx.log(this.owner, `${this.owner} has exhausted his energy reserve.`)
+
+      this.owner.ableToUseEnergy = false
+    }
 
     return true
   }

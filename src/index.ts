@@ -10,7 +10,12 @@ for (const key of ["BOT_TOKEN", "BOT_PREFIX", "BOT_OWNER"]) {
 }
 
 const client = new discord.Client({
-  intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES],
+  intents: [
+    discord.Intents.FLAGS.GUILDS,
+    discord.Intents.FLAGS.GUILD_MESSAGES,
+    discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+    discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
+  ],
 })
 
 ;(async () => {
