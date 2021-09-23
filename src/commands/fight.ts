@@ -16,17 +16,17 @@ export default new app.Command({
   async run(message) {
     const fightResult = app.startFight([
       new app.Fighter(message.author, {
-        hp: new app.Stat(100),
-        slowness: new app.Stat(3),
+        hp: new app.HP(100),
+        speed: new app.Speed(4),
         energy: new app.Stat(20),
-        luck: new app.Stat(10, 100),
+        luck: new app.Luck(10, 100),
         strength: new app.Stat(3),
       }),
       new app.Fighter(message.args.user, {
-        hp: new app.Stat(100),
-        slowness: new app.Stat(4),
+        hp: new app.HP(100),
+        speed: new app.Speed(3),
         energy: new app.Stat(20),
-        luck: new app.Stat(15, 100),
+        luck: new app.Luck(15, 100),
         strength: new app.Stat(4),
       }),
     ])
