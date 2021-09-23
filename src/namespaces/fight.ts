@@ -68,6 +68,19 @@ export class Fighter {
 
   getAction(ctx: FightContext): Action {
     // get action related to fight context
+    if (!this.ableToUseEnergy) {
+      const random = Math.random()
+
+      if (random < 0.333) {
+        // recupère autant d'energie qu'il a de force
+        return new Sleep(this)
+      } else if (random < 0.666) {
+        // bloque 50% des dégats de la prochaine attaque adverse
+        // todo: debuff apres l'attaque
+        return new Block(this)
+      }
+    }
+
     return new Attack(this)
   }
 
