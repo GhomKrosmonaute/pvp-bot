@@ -1,7 +1,12 @@
 export * from "discord.js"
 export * from "./app.native.js"
 export * from "./namespaces/utils.native.js"
-export * as discord from "discord.js"
 export * from "./namespaces/fight.js"
+export * from "./namespaces/action.js"
+export * from "./namespaces/stat.js"
+
+export * as discord from "discord.js"
 export * as utils from "./namespaces/utils.native.js"
 export * as fight from "./namespaces/fight.js"
+export * as stat from "./namespaces/stat.js"
+export * as action from "./namespaces/action.js"
