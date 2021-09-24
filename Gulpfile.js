@@ -1,4 +1,4 @@
-import fetch from "node-fetch"
+import fetch from "axios"
 import gulp from "gulp"
 import esbuild from "gulp-esbuild"
 import filter from "gulp-filter"
@@ -39,16 +39,15 @@ function _checkGulpfile(cb) {
   fetch(
     "https://raw.githubusercontent.com/CamilleAbella/bot.ts/master/Gulpfile.js"
   )
-    .then((res) => res.text())
-    .then((remote) => {
-      const local = fs.readFileSync(
+    .then((res) => res.data)
+    .then(async (remote) => {
+      const local = await fs.promises.readFile(
         path.join(process.cwd(), "Gulpfile.js"),
         "utf8"
       )
 
-      if (remote === local) cb()
-      else {
-        fs.writeFileSync(
+      if (remote !== local) {
+        await fs.promises.writeFile(
           path.join(process.cwd(), "Gulpfile.js"),
           remote,
           "utf8"
@@ -59,8 +58,9 @@ function _checkGulpfile(cb) {
             "update"
           )} command.`
         )
-        cb(null)
-      }
+
+        process.exit(0)
+      } else cb()
     })
     .catch(cb)
 }
